@@ -25,8 +25,6 @@ from skimage.measure import compare_ssim
 import torch.nn.functional as F
 
 import numpy as np
-import pandas as pd
-
 import re
 
 def ssim_score(generated_images, reference_images):
@@ -95,8 +93,8 @@ Local_transform = transforms.Compose([
     transforms.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5))
 ])
 
-data_dir = "/home/jiashu/Data/Balance_PIE_Data_3/test/"
-target_dir = "/home/jiashu/Data/Balance_PIE_Data_3/test_target/"
+data_dir = "/home/jiashu/Data/Five_Balance_PIE_Data_3/test/"
+target_dir = "/home/jiashu/Data/Five_Balance_PIE_Data_3/test_target/"
 
 gallery_dir = "/home/jiashu/Data/PIE_Gallery_Test/"
 gallery_set = ImageFolder_2(gallery_dir, True, transform)

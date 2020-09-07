@@ -142,11 +142,11 @@ Local_transform = transforms.Compose([
     transforms.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5))
 ])
 
-data_dir = "/home/jiashu/Data/Balance_PIE_Data_3/train/"
-target_dir = "/home/jiashu/Data/Balance_PIE_Data_3/train_target/"
+data_dir = "/home/jiashu/Data/Five_Balance_PIE_Data_3/larger_mini_test/"
+target_dir = "/home/jiashu/Data/Five_Balance_PIE_Data_3/larger_mini_test_target/"
 
-valid_data_dir = "/home/jiashu/Data/Balance_PIE_Data_3/larger_mini_test/"
-valid_target_dir = "/home/jiashu/Data/Balance_PIE_Data_3/larger_mini_test_target/"
+valid_data_dir = "/home/jiashu/Data/Five_Balance_PIE_Data_3/larger_mini_test/"
+valid_target_dir = "/home/jiashu/Data/Five_Balance_PIE_Data_3/larger_mini_test_target/"
 
 dset = ImageFolder(data_dir, target_dir, transform, R64_transform, R32_transform,R16_transform, Local_transform)
 
