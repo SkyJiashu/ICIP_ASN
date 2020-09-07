@@ -82,14 +82,11 @@ class ASModel(BaseModel):
                 if opt.with_D_PP:
                     self.load_network(self.netD_PP, 'netD_PP', which_epoch)
 
-
         if self.isTrain:
             self.old_lr = opt.lr
-
             self.fake_PP_pool = ImagePool(opt.pool_size)
             self.fake_PB_pool = ImagePool(opt.pool_size)
 
-            # define loss functions
             self.criterionGAN = networks.GANLoss(use_lsgan=not opt.no_lsgan, tensor=self.Tensor)
 
             if opt.L1_type == 'origin':
@@ -98,8 +95,8 @@ class ASModel(BaseModel):
                 self.criterionL1 = L1_plus_perceptualLoss(opt.lambda_A, opt.lambda_B, opt.perceptual_layers, self.gpu_ids, opt.percep_is_l1)
             else:
                 raise Excption('Unsurportted type of L1!')
-            # initialize optimizers
-            self.optimizer_G = torch.optim.Adam(self.netG.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))
+
+            self.optimizer_G = torch.optim.Adam(self.netG.parameters(), lr= (opt.lr/2) , betas=(opt.beta1, 0.999))
             if opt.with_D_PB:
                 self.optimizer_D_PB = torch.optim.Adam(self.netD_PB.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))
             if opt.with_D_PP:
@@ -123,21 +120,10 @@ class ASModel(BaseModel):
         posenum = input[4]
         idnum = input[9]
 
-        left_eye, right_eye = input[10], input[11]
-        nose, mouth = input[12], input[13]
+        input_P2_16  = input[10]
 
-
-        target_left_eye, target_right_eye = input[14], input[15]
-        target_nose, target_mouth = input[16], input[17]
-        input_P2_16  = input[18]
-
-        self.nose_xy = input[19]
-        self.left_eye_xy = input[20]
-        self.right_eye_xy = input[21]
-        self.mouth_xy = input[22]
-
-        input_P1_32 = input[23]
-        input_P1_64 = input[24]
+        input_P1_32 = input[11]
+        input_P1_64 = input[12]
 
         self.input_P1_64_set.resize_(input_P1_64.size()).copy_(input_P1_64)
         self.input_P1_32_set.resize_(input_P1_32.size()).copy_(input_P1_32)
@@ -154,17 +140,6 @@ class ASModel(BaseModel):
 
         self.posenum_para_set.resize_(posenum.size()).copy_(posenum)
         self.idnum_set.resize_(idnum.size()).copy_(idnum)
-
-        self.left_eye_set.resize_(left_eye.size()).copy_(left_eye)
-        self.right_eye_set.resize_(right_eye.size()).copy_(right_eye)
-        self.nose_set.resize_(nose.size()).copy_(nose)
-        self.mouth_set.resize_(mouth.size()).copy_(mouth)    
-
-        self.target_left_eye_set.resize_(target_left_eye.size()).copy_(target_left_eye)
-        self.target_right_eye_set.resize_(target_right_eye.size()).copy_(target_right_eye)
-        self.target_nose_set.resize_(target_nose.size()).copy_(target_nose)
-        self.target_mouth_set.resize_(target_mouth.size()).copy_(target_mouth)  
-
 
     def forward(self):
 
@@ -184,21 +159,13 @@ class ASModel(BaseModel):
         self.posenum = Variable(self.posenum_set)
         self.posenum_para = Variable(self.posenum_para_set)
 
-        self.left_eye = Variable(self.left_eye_set)
-        self.right_eye = Variable(self.right_eye_set)
-        self.nose = Variable(self.nose_set)
-        self.mouth = Variable(self.mouth_set)
-
-        self.target_left_eye = Variable(self.target_left_eye_set)
-        self.target_right_eye = Variable(self.target_right_eye_set)
-        self.target_nose = Variable(self.target_nose_set)
-        self.target_mouth = Variable(self.target_mouth_set)
+        self.input_BP1 = self.input_BP1.view(-1,1,128,128)
+        self.input_BP2 = self.input_BP2.view(-1,1,128,128)
 
         G_input = [self.input_P1,
-                   torch.cat((self.input_BP1, self.input_BP2), 1), self.left_eye,self.right_eye,self.nose,self.mouth,
-                    self.nose_xy,self.left_eye_xy,self.right_eye_xy, self.mouth_xy,self.input_P1_64, self.input_P1_32]
-
-        self.fake_p2,  self.x_64, self.x_32, self.x_16,  before_list, after_list = self.netG(G_input)
+                   torch.cat((self.input_BP1, self.input_BP2), 1)]
+ 
+        self.fake_p2,  self.x_64, self.x_32, self.x_16, before_list, after_list = self.netG(G_input)
                             
         return self.fake_p2, self.input_P2, self.idnum
 
@@ -220,32 +187,15 @@ class ASModel(BaseModel):
         self.posenum = Variable(self.posenum_set)
         self.posenum_para = Variable(self.posenum_para_set)
 
-        self.left_eye = Variable(self.left_eye_set)
-        self.right_eye = Variable(self.right_eye_set)
-        self.nose = Variable(self.nose_set)
-        self.mouth = Variable(self.mouth_set)
-
-        self.target_left_eye = Variable(self.target_left_eye_set)
-        self.target_right_eye = Variable(self.target_right_eye_set)
-        self.target_nose = Variable(self.target_nose_set)
-        self.target_mouth = Variable(self.target_mouth_set)
+        self.input_BP1 = self.input_BP1.view(-1,1,128,128)
+        self.input_BP2 = self.input_BP2.view(-1,1,128,128)
 
         G_input = [self.input_P1,
-                   torch.cat((self.input_BP1, self.input_BP2), 1), self.left_eye,self.right_eye,self.nose,self.mouth,
-                    self.nose_xy,self.left_eye_xy,self.right_eye_xy, self.mouth_xy,self.input_P1_64, self.input_P1_32]
-
-        self.fake_p2,  self.x_64, self.x_32, self.x_16,  before_list, after_list = self.netG(G_input)
+                   torch.cat((self.input_BP1, self.input_BP2), 1)]
+ 
+        self.fake_p2,  self.x_64, self.x_32, self.x_16, before_list, after_list = self.netG(G_input)
         
-        # G_input = [self.input_P1,
-        #            torch.cat((self.input_BP1, self.input_BP2), 1), self.left_eye,self.right_eye,self.nose,self.mouth,
-        #             self.nose_xy,self.left_eye_xy,self.right_eye_xy, self.mouth_xy,self.input_P1_64, self.input_P1_32]
-
-        # x1, fake_64, fake_32, fake_16, before_list, after_list
-
-        # self.fake_p2,  self.x_64, self.x_32, self.x_16, self.n_left_eye,self.n_right_eye,self.n_nose,self.n_mouth, before_list, after_list = self.netG(G_input)
-
-        return self.fake_p2, self.posenum, self.idnum, before_list, after_list, self.input_P1, self.input_P2                    
-        # return self.fake_p2, self.input_P2 , self.posenum, self.idnum, before_list, after_list, self.input_P1
+        return self.fake_p2, self.posenum, self.idnum, before_list, after_list, self.input_P1, self.input_P2              
 
 
     def Adaptive_symmetrical_loss(self, input_features, target_features, adpative_lambda):

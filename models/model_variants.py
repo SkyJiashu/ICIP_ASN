@@ -226,7 +226,7 @@ class ASNModel(nn.Module):
 
     def forward(self, input):
 
-        x1, x2, left_eye, right_eye, nose, mouth, nose_xy,left_eye_xy,right_eye_xy, mouth_xy, image_64, image_32 = input
+        x1, x2 = input
 
         # eye, nose, mouth are for TP-GAN
 
