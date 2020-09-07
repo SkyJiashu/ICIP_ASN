@@ -159,128 +159,6 @@ class DatasetFolder(data.Dataset):
         self.R16_transform = R16_transform
         self.Local_transform = Local_transform
 
-    def produce_area_mask_part(self, kp_array, img_size= (128,128)):
-        face_array = kp_array[0:27]
-        face_array = face_array.sum(axis=0)
-        mpl.image.imsave('./test/face_array.png', face_array)
-        kp_array_sum = kp_array.sum(axis=0)
-        mpl.image.imsave('./test/kp_array.png', kp_array_sum)
-
-        cords = []
-        mask = np.zeros(shape=img_size, dtype=np.float32)
-        i = 0 
-        while i <= 27:
-            array_map = kp_array[i]
-
-            max_value = np.max(array_map)
-            location_max_index = np.where(array_map >= max_value)
-            cords.append(location_max_index)
-            i = i + 1
-        array_map = kp_array[0]
-        max_value = np.max(array_map)
-        location_max_index = np.where(array_map >= max_value)
-
-        cords.append(location_max_index)
-        cords = np.array(cords)
-        rr, cc = polygon(cords[:,0], cords[:,1], shape=img_size)
-        mask[rr, cc] = 1
-        mpl.image.imsave('./test/mask.png', mask)
-        return mask
-
-
-    def point_Crop(self, location):
-
-        nose_location = location[27:31]
-        nose_location = nose_location.sum(axis=0)
-        max_value = np.max(nose_location)
-        nose_location_max_index = np.where(nose_location >= max_value)
-        x, y = self.Cen(nose_location_max_index)
-        nose_xy = (x, y)
-
-        left_eye_location = location[36:42]
-        left_eye_location = left_eye_location.sum(axis=0)
-        max_value = np.max(left_eye_location)
-        left_eye_location_max_index = np.where(left_eye_location >= max_value)  
-        x, y = self.Cen(left_eye_location_max_index)
-        left_eye_xy = (x, y)
-        
-        right_eye_location = location[42:48]
-        right_eye_location = right_eye_location.sum(axis=0)
-        max_value = np.max(right_eye_location)
-        right_eye_location_max_index = np.where(right_eye_location>=max_value) 
-        x, y = self.Cen(right_eye_location_max_index)
-        right_eye_xy = (x, y)
-
-
-        mouth_location = location[48:68]
-        mouth_location = mouth_location.sum(axis=0)
-        max_value = np.max(mouth_location)
-        mouth_location_max_index = np.where(mouth_location>=max_value)
-        x, y = self.Cen(mouth_location_max_index)
-        mouth_xy = (x, y)
-
-        return nose_xy, left_eye_xy, right_eye_xy, mouth_xy
-
-    def Cen(self, locations):
-
-        x = [location for location in locations[0]]
-        y = [location for location in locations[1]]
-
-        x_centroid = sum(x) / len(locations[0]) 
-        y_centroid = sum(y) / len(locations[0])
-
-        return math.ceil(y_centroid), math.ceil(x_centroid)
-
-    def Crop(self, im, location):
-
-        nose_location = location[27:31]
-
-        nose_location = nose_location.sum(axis=0)
-
-        max_value = np.max(nose_location)
-        nose_location_max_index = np.where(nose_location >= max_value)
-
-        x, y = self.Cen(nose_location_max_index)
-
-        nose_img = im.crop((x- 16, y -20, x  + 16, y+ 20))  # (left, upper, right, lower)
-
-        left_eye_location = location[36:42]
-        left_eye_location = left_eye_location.sum(axis=0)
-
-        max_value = np.max(left_eye_location)
-
-        left_eye_location_max_index = np.where(left_eye_location >= max_value)
-
-        x, y = self.Cen(left_eye_location_max_index)
-        left_eye_img= im.crop((x-20, y - 20, x + 20, y + 20))
-        
-
-        right_eye_location = location[42:48]
-        right_eye_location = right_eye_location.sum(axis=0)
-
-        max_value = np.max(right_eye_location)
-
-
-        right_eye_location_max_index = np.where(right_eye_location>=max_value) 
-
-        x, y = self.Cen(right_eye_location_max_index)
-        right_eye_img= im.crop((x-20, y - 20, x + 20, y + 20))
-
-
-        mouth_location = location[48:68]
-        mouth_location = mouth_location.sum(axis=0)
-
-        max_value = np.max(mouth_location)
-
-        mouth_location_max_index = np.where(mouth_location>=max_value) 
-
-        x, y = self.Cen(mouth_location_max_index)
-        mouth_img= im.crop((x- 16, y-24 , x + 16, y+ 24 ))
-
-        return left_eye_img, right_eye_img, nose_img, mouth_img
-
-
-
     def __getitem__(self, index):
         """
         Args:
@@ -288,43 +166,27 @@ class DatasetFolder(data.Dataset):
         Returns:
             tuple: (sample, target) where target is class_index of the target class.
         """
-
+        # sample , target1, target2 
         path, targetpath, pathK, targetpathK, num, idnum = self.samples[index]
         sample = self.loader(path)
         sampleK = np.load(pathK)
         targetsample = self.loader(targetpath)
         targetsampleK = np.load(targetpathK)
-        
-        left_eye, right_eye, nose, mouth = self.Crop(sample, sampleK["arr_0"])
-        target_left_eye, target_right_eye, target_nose, target_mouth = self.Crop(targetsample, targetsampleK["arr_0"])
-        nose_xy, left_eye_xy, right_eye_xy, mouth_xy = self.point_Crop(targetsampleK["arr_0"])
-    
+
         if self.transform is not None:
             sample_128 = self.transform(sample)
 
             sample_64 = self.R64_transform(sample)
             sample_32 = self.R32_transform(sample)
-
             targetsample_128 = self.transform(targetsample)
             targetsample_64 = self.R64_transform(targetsample)
             targetsample_32 = self.R32_transform(targetsample)
             targetsample_16 = self.R16_transform(targetsample)
-            sampleK = torch.FloatTensor(sampleK["arr_0"])
-            targetsampleK = torch.FloatTensor(targetsampleK["arr_0"])
-            left_eye = self.Local_transform(left_eye)
-            right_eye = self.Local_transform(right_eye)
-            nose = self.Local_transform(nose)
-            mouth = self.Local_transform(mouth)
-            target_left_eye = self.Local_transform(target_left_eye)
-            target_right_eye = self.Local_transform(target_right_eye)
-            target_nose = self.Local_transform(target_nose)
-            target_mouth = self.Local_transform(target_mouth)
-            nose_xy = torch.FloatTensor(nose_xy)
-            left_eye_xy= torch.FloatTensor(left_eye_xy)
-            right_eye_xy= torch.FloatTensor(right_eye_xy)
-            mouth_xy= torch.FloatTensor(mouth_xy)
 
-        return sample_128, targetsample_128, sampleK, targetsampleK, torch.FloatTensor(num), path, targetpath, targetsample_64, targetsample_32, torch.FloatTensor(idnum), left_eye, right_eye, nose, mouth, target_left_eye, target_right_eye, target_nose, target_mouth, targetsample_16, nose_xy, left_eye_xy, right_eye_xy, mouth_xy, sample_32, sample_64
+            sampleK = torch.FloatTensor(sampleK["arr_0"])
+            targetsampleK = torch.FloatTensor(targetsampleK["arr_0"])    
+
+        return sample_128, targetsample_128, sampleK, targetsampleK, torch.FloatTensor(num), path, targetpath, targetsample_64, targetsample_32, torch.FloatTensor(idnum), targetsample_16, sample_32, sample_64
  
     def __len__(self):
         return len(self.samples)
